@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #1a1a2e;
+            overflow: hidden;
+        }
+
+        .notification {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 16px 20px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .notification-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .notification-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notification-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            border-radius: 6px;
+        }
+
+        .close-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .notification-body {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.4;
+            margin-left: 32px;
+        }
+
+        .notification.break {
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+        }
+
+        .notification.break .notification-icon {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="notification-root"></div>
+    <script type="module">
+        // Get current window label from URL or window name
+        const windowLabel = window.__TAURI_INTERNALS__?.metadata?.currentWindow?.label || '';
+
+        // Parse URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const title = decodeURIComponent(params.get('title') || 'Notification');
+        const body = decodeURIComponent(params.get('body') || '');
+        const type = params.get('type') || 'pomodoro';
+
+        const root = document.getElementById('notification-root');
+        root.innerHTML = `
+      <div class="notification ${type}">
+        <div class="notification-header">
+          <div class="notification-title">
+            <div class="notification-icon">${type === 'break' ? '☕' : '🍅'}</div>
+            <span>${title}</span>
+          </div>
+          <button class="close-btn" id="close-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="notification-body">${body}</div>
+      </div>
+    `;
+
+        // Close function using Tauri invoke
+        async function closeWindow() {
+            try {
+                const { invoke } = await import('@tauri-apps/api/core');
+                await invoke('close_notification', { label: windowLabel });
+            } catch (e) {
+                console.error('Failed to close:', e);
+                // Fallback
+                window.close();
+            }
+        }
+
+        // Close button handler
+        document.getElementById('close-btn').addEventListener('click', closeWindow);
+
+        // Auto close after 5 seconds
+        setTimeout(closeWindow, 5000);
+    </script>
+</body>
+
+</html>
